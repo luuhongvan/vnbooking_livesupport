@@ -12,8 +12,7 @@
 	float:right;
 }
 
-.user-is-typing,
-#id-operator-typing {
+.user-is-typing, #id-operator-typing {
     display:none;
     font-weight:bold;
     position:absolute;
