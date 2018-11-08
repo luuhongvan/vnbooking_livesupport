@@ -615,6 +615,7 @@ class erLhcoreClassBBCode
     	$in = array( 	 '/\[b\](.*?)\[\/b\]/ms',
     					 '/\[i\](.*?)\[\/i\]/ms',
     					 '/\[u\](.*?)\[\/u\]/ms',
+    					 '/\[mark\](.*?)\[\/mark\]/ms',
     					 '/\[s\](.*?)\[\/s\]/ms',
     					 '/\[list\=(.*?)\](.*?)\[\/list\]/ms',
     					 '/\[list\](.*?)\[\/list\]/ms',
@@ -626,6 +627,7 @@ class erLhcoreClassBBCode
     	$out = array(	 '<strong>\1</strong>',
     					 '<em>\1</em>',
     					 '<u>\1</u>',
+    					 '<mark>\1</mark>',
     					 '<strike>\1</strike>',
     					 '<ol start="\1">\2</ol>',
     					 '<ul>\1</ul>',
@@ -669,6 +671,18 @@ class erLhcoreClassBBCode
             return '[img]' . $matches[1] . '[img]';
            
         return "<div class=\"img_embed\"><img src=\"".$url."\" alt=\"\" /></div>";        
+   }
+
+   public static function _make_embed_map($matches)
+   {
+       $parts = explode(',',trim($matches[1]));
+
+       if (count($parts) == 2 && is_numeric($parts[0]) && is_numeric($parts[1])) {
+           $id = rand(0,1000) . time();
+           return "<div id='msg-location-".$id."' style='height:300px'><script>lhinst.showMessageLocation(" . $id . "," . (real)$parts[0] . "," . (real)$parts[1] . ")</script></div>";
+       }
+
+       return ;
    }
 
    public static function _make_url_embed($matches){
@@ -945,7 +959,9 @@ class erLhcoreClassBBCode
         erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.before_make_clickable',array('msg' => & $ret, 'makeLinksClickable' => & $makeLinksClickable));
 
         $ret = preg_replace_callback('/\[img\](.*?)\[\/img\]/ms', "erLhcoreClassBBCode::_make_url_embed_image", $ret);
-        
+
+        $ret = preg_replace_callback('/\[loc\](.*?)\[\/loc\]/ms', "erLhcoreClassBBCode::_make_embed_map", $ret);
+
         $ret = preg_replace_callback('/\[url\="?(.*?)"?\](.*?)\[\/url\]/ms', "erLhcoreClassBBCode::_make_url_embed", $ret);
         
         if ($makeLinksClickable) {

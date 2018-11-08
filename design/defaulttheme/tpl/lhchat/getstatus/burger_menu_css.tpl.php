@@ -20,13 +20,13 @@ ul." . $chatCSSPrefix . "-cf a {
 }
 
 ul." . $chatCSSPrefix . "-cf li ul a{
-    background-color:#" . ($theme !== false ? $theme->header_background : '0065b8') .";
+    background-color:#" . ($theme !== false ? $theme->header_background : '55AF32') .";
     padding:7px!important;
 }
 
 ul." . $chatCSSPrefix . "-cf > li > a{
     font-size:21px!important;
-    color:#a6a6a6;
+    color:#fff;
     text-align:center!important;
 }
 

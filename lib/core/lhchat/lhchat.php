@@ -59,6 +59,10 @@ class erLhcoreClassChat {
 			'auto_responder_id',
 			'chat_locale',
 			'anonymized',
+			'uagent',
+			'pnd_time',
+			'user_tz_identifier',
+			'invitation_id',
 	);
 
 	public static $limitMessages = 50;
@@ -423,6 +427,13 @@ class erLhcoreClassChat {
     		}
     	}
 
+        if (isset($params['filternot']) && count($params['filternot']) > 0)
+        {
+            foreach ($params['filternot'] as $field => $fieldValue) {
+                $conditions[] = $q->expr->neq($field, $q->bindValue($fieldValue));
+            }
+        }
+
     	if (isset($params['customfilter']) && count($params['customfilter']) > 0)
     	{
     		foreach ($params['customfilter'] as $fieldValue)
@@ -536,7 +547,6 @@ class erLhcoreClassChat {
 
     	if ($limitation !== true) {
     		$filter['customfilter'][] = $limitation;
-    		$filter['use_index'] = 'has_unread_messages_dep_id_id';
     	}
 
     	if (!empty($filterAdditional)) {
@@ -817,12 +827,13 @@ class erLhcoreClassChat {
 	       }
          
            if ($rowsNumber == 0){ // Perhaps auto active is turned on for some of departments
+
                $stmt = $db->prepare("SELECT lh_departament_custom_work_hours.start_hour, lh_departament_custom_work_hours.end_hour FROM lh_departament_custom_work_hours INNER JOIN lh_departament ON lh_departament.id = lh_departament_custom_work_hours.dep_id WHERE (lh_departament.pending_group_max = 0 || lh_departament.pending_group_max > lh_departament.pending_chats_counter) AND (lh_departament.pending_max = 0 || lh_departament.pending_max > lh_departament.pending_chats_counter) AND lh_departament.hidden = 0 AND lh_departament.disabled = 0 AND date_from <= :date_from AND date_to >= :date_to");
                $stmt->bindValue(':date_from',strtotime(date('Y-m-d')),PDO::PARAM_INT);
                $stmt->bindValue(':date_to',strtotime(date('Y-m-d')),PDO::PARAM_INT);
                $stmt->execute();
                $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
-                 
+
                if(!empty($result)) {
                    foreach ($result as $item) {
                        if($item['start_hour'] <= (int)(date('G') . date('i')) && $item['end_hour'] > (int)(date('G') . date('i')))

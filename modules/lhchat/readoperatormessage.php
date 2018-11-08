@@ -421,13 +421,37 @@ if (isset($_POST['askQuestion']))
        $chat->priority = is_numeric($Params['user_parameters_unordered']['priority']) ? (int)$Params['user_parameters_unordered']['priority'] : $chat->department->priority;
        $chat->chat_initiator = erLhcoreClassModelChat::CHAT_INITIATOR_PROACTIVE;
 
+       // Set invitation if any
+       if ($userInstance->invitation_id > 0) {
+            $chat->invitation_id = $userInstance->invitation_id;
+       }
+
+       $onlineAttrSystem = $userInstance->online_attr_system_array;
+
+       $ignoreResponder = isset($onlineAttrSystem['lhc_ignore_autoresponder']) && $onlineAttrSystem['lhc_ignore_autoresponder'] == 1;
+
+       if (isset($onlineAttrSystem['lhc_assign_to_me']) && $onlineAttrSystem['lhc_assign_to_me'] == 1 && $userInstance->operator_user_id > 0) {
+           $chat->user_id = $userInstance->operator_user_id;
+           $chat->tslasign = time();
+       }
+
        // Store chat
        erLhcoreClassChat::getSession()->save($chat);
+
+       $conversionUser = erLhAbstractModelProactiveChatCampaignConversion::fetch($userInstance->conversion_id);
+       if ($conversionUser instanceof erLhAbstractModelProactiveChatCampaignConversion) {
+           $conversionUser->invitation_status = erLhAbstractModelProactiveChatCampaignConversion::INV_CHAT_STARTED;
+           $conversionUser->chat_id = $chat->id;
+           $conversionUser->department_id = $chat->dep_id;
+           $conversionUser->con_time = time();
+           $conversionUser->saveThis();
+       }
 
        // Mark as user has read message from operator.
        $userInstance->message_seen = 1;
        $userInstance->message_seen_ts = time();
        $userInstance->chat_id = $chat->id;
+       $userInstance->conversion_id = 0;
        $userInstance->saveThis();
 
        $chat->online_user_id = $userInstance->id;
@@ -463,7 +487,7 @@ if (isset($_POST['askQuestion']))
            
            $messageInitial = $msg;
        
-           if ($userInstance->invitation !== false) {
+           if ($ignoreResponder == false && $userInstance->invitation !== false) {
 
                $responder = $userInstance->invitation->autoresponder;
                
@@ -515,7 +539,7 @@ if (isset($_POST['askQuestion']))
                    }
                }
 
-           } else {
+           } elseif ($ignoreResponder == false) {
     
            		// Default auto responder
     	       	$responder = erLhAbstractModelAutoResponder::processAutoResponder($chat);
@@ -585,7 +609,14 @@ if (isset($_POST['askQuestion']))
        $chat->last_msg_id = $msg->id;
        $chat->last_user_msg_time = time();
        $chat->saveThis();
-       
+
+       if ($chat->user_id > 0) {
+           erLhcoreClassUserDep::updateLastAcceptedByUser($chat->user_id, time());
+
+           // Update fresh user statistic
+           erLhcoreClassChat::updateActiveChats($chat->user_id);
+       }
+
        erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.chat_started',array('chat' => & $chat, 'msg' => $messageInitial));
        
        erLhcoreClassChat::updateDepartmentStats($chat->department);
@@ -601,6 +632,13 @@ if (isset($_POST['askQuestion']))
 
     } else {
         $tpl->set('errors',$Errors);
+    }
+} elseif ($userInstance->conversion_id > 0) {
+    $conversionUser = erLhAbstractModelProactiveChatCampaignConversion::fetch($userInstance->conversion_id);
+    if ($conversionUser instanceof erLhAbstractModelProactiveChatCampaignConversion && $conversionUser->invitation_status != erLhAbstractModelProactiveChatCampaignConversion::INV_SHOWN) {
+        $conversionUser->invitation_status = erLhAbstractModelProactiveChatCampaignConversion::INV_SHOWN;
+        $conversionUser->con_time = time();
+        $conversionUser->saveThis();
     }
 }
 
@@ -749,7 +787,6 @@ if (isset($_POST['r']))
 	$tpl->set('referer_site',$_POST['r']);
 }
 
-
 // Auto start chat
 $autoStartResult = erLhcoreClassChatValidator::validateAutoStart(array(
     'params' => $Params,
@@ -765,8 +802,6 @@ if ($autoStartResult !== false) {
     $Result = $autoStartResult;
     return;
 }
-
-
 
 erLhcoreClassChatEventDispatcher::getInstance()->dispatch('chat.readoperatormessage',array('tpl' => $tpl, 'params' => & $Params));
 

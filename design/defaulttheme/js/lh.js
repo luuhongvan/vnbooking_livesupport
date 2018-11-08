@@ -38,7 +38,10 @@ function lh(){
     this.operatorTyping = false;
     this.forceBottomScroll = false;
     this.appendSyncArgument = '';
-    
+    this.nodeJsMode = false;
+
+    this.gmaps_loaded = false;
+
     // Disable sync, is used in angular controllers before migration to new JS structure
     this.disableSync = false;
     
@@ -299,13 +302,18 @@ function lh(){
     	};
     	
     	$('#chat-tab-link-'+chat_id).click(function() {
+
+            setTimeout(function() {
+                $('#CSChatMessage-' + chat_id).focus();
+            },2);
+
     		var inst = $(this);
     		setTimeout(function(){
     			inst.find('.msg-nm').remove();
     			inst.removeClass('has-pm');    			
     			$('#messagesBlock-'+chat_id).stop(true,false).animate({ scrollTop: $('#messagesBlock-'+chat_id).prop('scrollHeight') }, 500);
-    			$('#CSChatMessage-'+chat_id).focus();
     			ee.emitEvent('chatTabClicked', [chat_id, inst]);
+
     		},500);
     	});
     	
@@ -522,7 +530,9 @@ function lh(){
         };
 
         this.forgetChat(chat_id);
-        
+
+        ee.emitEvent('removeSynchroChat', [chat_id]);
+
         if (LHCCallbacks.removeSynchroChat) {
         	LHCCallbacks.removeSynchroChat(chat_id);
         }
@@ -541,9 +551,9 @@ function lh(){
             inst.is_typing = true;
             clearTimeout(inst.typing_timeout);
             
-            if (LHCCallbacks.initTypingMonitoringAdminInform) {
-            	inst.typing_timeout = setTimeout(function(){inst.typingStoppedOperator(chat_id);},3000);   
-           		LHCCallbacks.initTypingMonitoringAdminInform({'chat_id':chat_id,'status':true});
+            if (inst.nodeJsMode == true) {
+            	inst.typing_timeout = setTimeout(function(){inst.typingStoppedOperator(chat_id);},3000);
+            	ee.emitEvent('operatorTyping', [{'chat_id':chat_id,'status':true}]);
             } else {                
                 $.getJSON(www_dir + 'chat/operatortyping/' + chat_id+'/true',{ }, function(data){
                    inst.typing_timeout = setTimeout(function(){inst.typingStoppedOperator(chat_id);},3000);                   
@@ -614,9 +624,9 @@ function lh(){
         var inst = this;
         if (inst.is_typing == true){
         	
-        	if (LHCCallbacks.typingStoppedOperatorInform) {
+        	if (lhinst.nodeJsMode  == true) {
         		inst.is_typing = false;
-           		LHCCallbacks.typingStoppedOperatorInform({'chat_id':chat_id,'status':false});
+           		ee.emitEvent('operatorTyping', [{'chat_id':chat_id,'status':false}]);
             } else {        	
 	            $.getJSON(this.wwwDir + 'chat/operatortyping/' + chat_id+'/false',{ }, function(data){
 	                inst.is_typing = false;                
@@ -674,18 +684,24 @@ function lh(){
          	 };
         	
             if (inst.is_typing == false) {
-                inst.is_typing = true;
+
                 clearTimeout(inst.typing_timeout);
-                                
+
                 if (LHCCallbacks.initTypingMonitoringUserInform) {
-                	inst.typing_timeout = setTimeout(function(){inst.typingStoppedUser(chat_id);},3000);
-               		LHCCallbacks.initTypingMonitoringUserInform({'chat_id':chat_id,'hash':inst.hash,'status':true,msg:$(this).val()});               		
-                } else {               
+
+                	inst.typing_timeout = setTimeout(function(){
+                        ee.emitEvent('visitorTypingStopped', [{'chat_id':chat_id,'hash':inst.hash}]);
+                    },3000);
+
+                    ee.emitEvent('visitorTyping', [{'chat_id':chat_id,'hash':inst.hash,'status':true,msg:$(this).val()}]);
+                } else {
+
+                    inst.is_typing = true;
 	                $.postJSON(www_dir + 'chat/usertyping/' + chat_id+'/'+inst.hash+'/true',{msg:$(this).val()}, function(data){
 	                   inst.typing_timeout = setTimeout(function(){inst.typingStoppedUser(chat_id);},3000);
 	                   
 	                   if (LHCCallbacks.initTypingMonitoringUser) {
-	                   		LHCCallbacks.initTypingMonitoringUser(chat_id,true);
+                           ee.emitEvent('initVisitorTyping', [chat_id,true]);
 	                   };
 	                   
 	                }).fail(function(){
@@ -695,17 +711,18 @@ function lh(){
                                 
             } else {
                  clearTimeout(inst.typing_timeout);
-                 inst.typing_timeout = setTimeout(function(){inst.typingStoppedUser(chat_id);},3000);
+                 inst.typing_timeout = setTimeout(function(){inst.typingStoppedUser(chat_id);}, 3000);
+
                  var txtArea = $(this).val();
                  if (inst.currentMessageText != txtArea ) {
                 	 if ( Math.abs(inst.currentMessageText.length - txtArea.length) > 6) {
                 		 inst.currentMessageText = txtArea;                		 
                 		 if (LHCCallbacks.initTypingMonitoringUserInform) {                         	
-                        		LHCCallbacks.initTypingMonitoringUserInform({'chat_id':chat_id,'hash':inst.hash,'status':true,msg:txtArea});               		
+                                ee.emitEvent('visitorTyping', [{'chat_id':chat_id,'hash':inst.hash,'status':true,msg:$(this).val()}]);
                          } else {                		 
 	                		 $.postJSON(www_dir + 'chat/usertyping/' + chat_id+'/'+inst.hash+'/true',{msg:txtArea}, function(data){
 	                			 if (LHCCallbacks.initTypingMonitoringUser) {
-	                            		LHCCallbacks.initTypingMonitoringUser(chat_id,true);
+                                        ee.emitEvent('initVisitorTyping', [chat_id,true]);
 	                             };
 	                		 });
                 		 }
@@ -720,12 +737,12 @@ function lh(){
         if (inst.is_typing == true){        	
         	if (LHCCallbacks.typingStoppedUserInform) {   
         		inst.is_typing = false;
-        		LHCCallbacks.typingStoppedUserInform({'chat_id':chat_id,'hash':this.hash,'status':false});               		
-        	} else {        	        	
+                ee.emitEvent('visitorTypingStopped', [{'chat_id':chat_id,'hash':this.hash,'status':false}]);
+        	} else {
 	            $.getJSON(this.wwwDir + 'chat/usertyping/' + chat_id+'/'+this.hash+'/false',{ }, function(data){
 	                inst.is_typing = false;
 	                if (LHCCallbacks.initTypingMonitoringUser) {
-	            		LHCCallbacks.initTypingMonitoringUser(chat_id,false);
+                        ee.emitEvent('initVisitorTyping', [chat_id,false]);
 	                };
 	            }).fail(function(){
 	            	inst.is_typing = false;
@@ -853,7 +870,7 @@ function lh(){
                 			};
                 			
                 			if (inst.last_message_id > 0) {
-                				if ($('#msg-'+inst.last_message_id).attr('data-op-id') != data.msop) {
+                				if ($('#msg-'+inst.last_message_id).attr('data-op-id') != data.msop || ($('#msg-'+inst.last_message_id+' > .usr-tit').text() !== $('#msg-'+data.message_id+' > .usr-tit').text())) {
                 					$('#msg-'+inst.last_message_id).next().addClass('operator-changes');
                 				}
                 			}
@@ -1059,10 +1076,10 @@ function lh(){
     			var link = linkTab.find('> a');
     		}
     	}
-    	
+
     	if (!tabs.find('> ul > li.active').length) {
     		link.tab('show');
-    		
+
     		if (link.attr('id') !== undefined) {
         		var new_chat_id = link.attr('href').replace('#chat-id-','');
         		this.removeBackgroundChat(new_chat_id);
@@ -1070,8 +1087,12 @@ function lh(){
         		ee.emitEvent('chatTabFocused', [new_chat_id]);
         	}
     	}
-    	
-    	return link.attr('href').replace('#','#/');
+
+    	if (link.attr('href') !== undefined) {
+            return link.attr('href').replace('#','#/');
+        } else {
+    	    return '#';
+        }
 	};
 	
 	this.startChatCloseTabNewWindow = function(chat_id, tabs, name)
@@ -1695,7 +1716,6 @@ function lh(){
 	        {
 	            this.syncroRequestSend = true;
 
-                clearTimeout(this.userTimeout);
         	    $.postJSON(this.wwwDir + this.syncadmin ,{ 'chats[]': this.chatsSynchronisingMsg }, function(data){
 
                     if (typeof data.error_url !== 'undefined') {
@@ -1772,7 +1792,9 @@ function lh(){
 	        	                      if (item.tp == 'true') {
 	                                      $('#user-is-typing-'+item.chat_id).html(item.tx).css('visibility','visible');
 	        	                      } else {
-	        	                          $('#user-is-typing-'+item.chat_id).css('visibility','hidden');
+                                          if (lhinst.nodeJsMode == false) {
+                                              $('#user-is-typing-'+item.chat_id).css('visibility','hidden');
+                                          }
 	        	                      };
 
                                       $('#last-msg-chat-'+item.chat_id).text(item.lmsg);
@@ -1836,9 +1858,11 @@ function lh(){
 
                             lhinst.hidenicknamesstatus = groupTabs;
 
+                            clearTimeout(lhinst.userTimeout);
 	        	            lhinst.userTimeout = setTimeout(chatsyncadmin,confLH.chat_message_sinterval);
 	        	        };
-        	    	} catch (err) {        	    	
+        	    	} catch (err) {
+                        clearTimeout(lhinst.userTimeout);
         	    		lhinst.userTimeout = setTimeout(chatsyncadmin,confLH.chat_message_sinterval);
 					};
         	        									
@@ -1851,10 +1875,12 @@ function lh(){
         	        
         	        
             	}).fail(function(){
+                    clearTimeout(lhinst.userTimeout);
             		lhinst.userTimeout = setTimeout(chatsyncadmin,confLH.chat_message_sinterval);
             		lhinst.setSynchronizationRequestSend(false);
             	});
 	        } else {
+                clearTimeout(lhinst.userTimeout);
 	        	lhinst.userTimeout = setTimeout(chatsyncadmin,confLH.chat_message_sinterval);
 	        }
 
@@ -2274,7 +2300,7 @@ function lh(){
 		
 		var $textarea = jQuery('#CSChatMessage-'+chat_id);
 		
-		var cannedMessageSuggest = new LHCCannedMessageAutoSuggest({'chat_id':chat_id});
+		var cannedMessageSuggest = new LHCCannedMessageAutoSuggest({'chat_id': chat_id,'uppercase_enabled': confLH.auto_uppercase});
 		
 		$textarea.bind('keydown', 'return', function (evt){			
 				_that.addmsgadmin(chat_id);
@@ -2301,7 +2327,7 @@ function lh(){
 		// Resize by user 
 		$messageBlock = $('#messagesBlock-'+chat_id);
 		
-		$messageBlock.css('height',this.getLocalValue('lhc_mheight','200'));
+		$messageBlock.css('height',this.getLocalValue('lhc_mheight',confLH.defaultm_hegiht));
 		
 		$messageBlock.data('resized',false);
 		$messageBlock.data('y', $messageBlock.outerHeight()); 
@@ -2676,7 +2702,7 @@ function lh(){
     }; 
     
     this.changeUserSettingsIndifferent = function(attr,value){
-    	$.get(this.wwwDir+  'user/setsettingajax/'+attr+'/'+value+'/(indifferent)/true');
+    	$.get(this.wwwDir+  'user/setsettingajax/'+attr+'/'+encodeURIComponent(value)+'/(indifferent)/true');
     };
 
 	this.switchToOfflineForm = function(){
@@ -2692,6 +2718,10 @@ function lh(){
 	   		 if (data.error == 'false') {
 	   			$('#myModal').modal('hide');
 	   			inst.updateVoteStatus(chat_id);
+	   			if (data.is_owner === true) {
+                    $('#CSChatMessage-'+chat_id).attr('placeholder','');
+                    $('#CSChatMessage-'+chat_id).focus();
+                }
 	   		 } else {
 	   			 alert(data.result);
 	   		 }
@@ -3148,19 +3178,27 @@ function lh(){
     	lhc.revealModal({'url':WWW_DIR_JAVASCRIPT+'chat/editnick/'+this.chat_id+'/'+this.hash})   
     }
 
+    this.enableVisitorEditor = function()
+    {
+        $('#CSChatMessage').prop('readonly',false);
+    }
+
+    this.disableVisitorEditor = function()
+    {
+        setTimeout(function(){
+            $('#CSChatMessage').prop('readonly',true);
+        },300);
+    }
+
     this.buttonClicked = function(payload, id, btn, notHide) {
 
         if (btn.attr("data-no-change") == undefined) {
             btn.attr("disabled","disabled");
-            btn.text("Processing...");
+            btn.prepend("<i class=\"material-icons lhc-spin\">loop</i>");
         }
 
         var messageBlock = $('#messagesBlock');
-
-        var processing = jQuery('<div/>', {
-            'class': 'message-row pending-storage pending-storage-bot',
-            text: 'Processing...'
-        }).appendTo(messageBlock);
+        
         var scrollHeight = messageBlock.prop("scrollHeight");
         messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
 
@@ -3172,14 +3210,15 @@ function lh(){
                 $('.meta-message-'+id).remove();
             }
 
-            processing.remove();
             var scrollHeight = messageBlock.prop("scrollHeight");
             messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
             lhinst.forceBottomScroll = true;
             lhinst.syncroRequestSend = false;
+            lhinst.enableVisitorEditor();
             lhinst.syncusercall();
         }).fail(function() {
             lhinst.syncroRequestSend = false;
+            lhinst.enableVisitorEditor();
             lhinst.syncusercall();
         });
 
@@ -3190,11 +3229,6 @@ function lh(){
 
         var messageBlock = $('#messagesBlock');
 
-        var processing = jQuery('<div/>', {
-            'class': 'message-row pending-storage pending-storage-bot',
-            text: 'Processing...'
-        }).appendTo(messageBlock);
-
         var scrollHeight = messageBlock.prop("scrollHeight");
         messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
 
@@ -3202,14 +3236,15 @@ function lh(){
         clearTimeout(this.userTimeout);
 
         $.get(this.wwwDir + 'genericbot/buttonclicked/'+this.chat_id+'/'+this.hash+'/(type)/editgenericstep',{payload : step,id : id},function(data){
-            processing.remove();
             var scrollHeight = messageBlock.prop("scrollHeight");
             messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
             lhinst.forceBottomScroll = true;
             lhinst.syncroRequestSend = false;
+            lhinst.enableVisitorEditor();
             lhinst.syncusercall();
         }).fail(function() {
             lhinst.syncroRequestSend = false;
+            lhinst.enableVisitorEditor();
             lhinst.syncusercall();
         });
         
@@ -3220,16 +3255,10 @@ function lh(){
 
         if (btn.attr("data-no-change") == undefined) {
             btn.attr("disabled","disabled");
-            btn.text("Processing...");
+            btn.prepend("<i class=\"material-icons lhc-spin\">loop</i>");
         }
 
         var messageBlock = $('#messagesBlock');
-
-        var processing = jQuery('<div/>', {
-            'class': 'message-row pending-storage pending-storage-bot',
-            text: 'Processing...'
-        }).appendTo(messageBlock);
-
         var scrollHeight = messageBlock.prop("scrollHeight");
         messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
 
@@ -3241,16 +3270,17 @@ function lh(){
                 $('.meta-message-'+id).remove();
             }
 
-            processing.remove();
             var scrollHeight = messageBlock.prop("scrollHeight");
             messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
 
             lhinst.forceBottomScroll = true;
             lhinst.syncroRequestSend = false;
+            lhinst.enableVisitorEditor();
             lhinst.syncusercall();
 
         }).fail(function() {
             lhinst.syncroRequestSend = false;
+            lhinst.enableVisitorEditor();
             lhinst.syncusercall();
         });
 
@@ -3261,15 +3291,10 @@ function lh(){
 
         if (btn.attr("data-no-change") == undefined) {
             btn.attr("disabled","disabled");
-            btn.text("Processing...");
+            btn.prepend("<i class=\"material-icons lhc-spin\">loop</i>");
         }
 
         var messageBlock = $('#messagesBlock');
-
-        var processing = jQuery('<div/>', {
-            'class': 'message-row pending-storage pending-storage-bot',
-            text: 'Processing...'
-        }).appendTo(messageBlock);
 
         var scrollHeight = messageBlock.prop("scrollHeight");
         messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
@@ -3282,16 +3307,17 @@ function lh(){
                 $('.meta-message-'+id).remove();
             }
 
-            processing.remove();
             var scrollHeight = messageBlock.prop("scrollHeight");
             messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
 
             lhinst.forceBottomScroll = true;
             lhinst.syncroRequestSend = false;
+            lhinst.enableVisitorEditor();
             lhinst.syncusercall();
 
         }).fail(function() {
             lhinst.syncroRequestSend = false;
+            lhinst.enableVisitorEditor();
             lhinst.syncusercall();
         });
         lhinst.focusUserText();
@@ -3301,13 +3327,9 @@ function lh(){
 
         if (btn.attr("data-no-change") == undefined) {
             btn.attr("disabled","disabled");
-            btn.text("Processing...");
+            btn.prepend("<i class=\"material-icons lhc-spin\">loop</i>");
         }
         var messageBlock = $('#messagesBlock');
-        var processing = jQuery('<div/>', {
-            'class': 'message-row pending-storage pending-storage-bot',
-            text: 'Processing...'
-        }).appendTo(messageBlock);
 
         var scrollHeight = messageBlock.prop("scrollHeight");
         messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
@@ -3317,15 +3339,16 @@ function lh(){
             clearTimeout(this.userTimeout);
             $.get(this.wwwDir + 'genericbot/buttonclicked/'+this.chat_id+'/'+this.hash+'/(type)/valueclicked',{payload: $('#id_generic_list-'+id).val(), id : id},function(data){
                 $('.meta-message-'+id).remove();
-                processing.remove();
                 var scrollHeight = messageBlock.prop("scrollHeight");
                 messageBlock.stop(true,false).animate({ scrollTop: scrollHeight }, 500);
 
                 lhinst.forceBottomScroll = true;
                 lhinst.syncroRequestSend = false;
+                lhinst.enableVisitorEditor();
                 lhinst.syncusercall();
             }).fail(function() {
                 lhinst.syncroRequestSend = false;
+                lhinst.enableVisitorEditor();
                 lhinst.syncusercall();
             });
             
@@ -3388,6 +3411,64 @@ function lh(){
         }
     }
 
+    this.gmaps_loading = false;
+    this.queue_render = [];
+
+    this.showMessageLocation = function(id,lat,lon) {
+        var myLatLng = {lat: lat, lng: lon};
+
+        if (this.gmaps_loaded == true) {
+
+            var map = new google.maps.Map(document.getElementById('msg-location-' + id), {
+                zoom: 13,
+                center: myLatLng
+            });
+
+            var marker = new google.maps.Marker({
+                position: myLatLng,
+                map: map,
+                title: lat+","+lon
+            });
+
+        } else {
+            if (this.gmaps_loading == false) {
+                this.gmaps_loading = true;
+                var po = document.createElement('script'); po.type = 'text/javascript';
+                po.async = true;
+                po.src = 'https://maps.googleapis.com/maps/api/js?key='+confLH.gmaps_api_key+"&callback=chatMapLoaded";
+                var s = document.getElementsByTagName('script')[0];
+                s.parentNode.insertBefore(po, s);
+                lhinst.queue_render.push({'id':id,'lat':lat,'lon':lon});
+            } else {
+                lhinst.queue_render.push({'id':id,'lat':lat,'lon':lon});
+            }
+        }
+    }
+}
+
+function chatMapLoaded()
+{
+    if (lhinst.queue_render.length > 0){
+        lhinst.gmaps_loaded = true;
+        var i = lhinst.queue_render.pop();
+
+        var myLatLng = {lat: i.lat, lng: i.lon};
+
+        var map = new google.maps.Map(document.getElementById('msg-location-' + i.id), {
+            zoom: 13,
+            center: myLatLng
+        });
+
+        var marker = new google.maps.Marker({
+            position: myLatLng,
+            map: map,
+            title: i.lat+","+i.lon
+        });
+
+        if (lhinst.queue_render.length > 0) {
+            chatMapLoaded();
+        }
+    }
 }
 
 var lhinst = new lh();
@@ -3406,6 +3487,8 @@ jQuery(document).on("click", function(){
 jQuery(document).on("touchstart", preloadSound);
 
 function gMapsCallback(){
+
+    lhinst.gmaps_loaded = true;
 
 	var $mapCanvas = $('#map_canvas');
 
@@ -3531,6 +3614,34 @@ function gMapsCallback(){
 		},500);	
 		showMarkers();
 	});
+};
+
+$.fn.makeDropdown = function() {
+    var filterInput = this.find('.btn-block-department-filter > input');
+
+    this.click(function(){
+        setTimeout(function(){
+            filterInput.focus();
+        },50);
+    })
+
+    this.on("click", "[data-stopPropagation]", function(e) {
+        e.stopPropagation();
+        filterInput.focus();
+    })
+
+    filterInput.keyup(function(){
+        var filter = $(this).val();
+        $(this).parent().parent().children('li').each(function(i) {
+            if (i > 0) {
+                if (!$(this).text().toLowerCase().includes(filter) && filter != ''){
+                    $(this).hide();
+                } else {
+                    $(this).show();
+                }
+            }
+        });
+    });
 };
 
 var focused = true;

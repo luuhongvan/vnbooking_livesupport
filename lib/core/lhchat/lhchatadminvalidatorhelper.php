@@ -101,7 +101,12 @@ class erLhcoreClassAdminChatValidatorHelper {
         {
             $cannedMessage->tags_plain = $form->Tags;
         }
-        
+
+        if (strpos($cannedMessage->tags_plain,'#') !== false)
+        {
+            $Errors[] =  erTranslationClassLhTranslation::getInstance()->getTranslation('chat/cannedmsg','Canned message tags should not contain # character');
+        }
+
         if ( $form->hasValidData( 'DepartmentID' )  ) {
             $cannedMessage->department_id = $form->DepartmentID;
             if ($userDepartments !== true) {
@@ -349,6 +354,14 @@ class erLhcoreClassAdminChatValidatorHelper {
 	        'CustomFieldsEncryptionHMac' => new ezcInputFormDefinitionElement(
 	            ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw' 
 	        ),
+
+
+            'customFieldURLIdentifier' => new ezcInputFormDefinitionElement(
+                ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw', null, FILTER_REQUIRE_ARRAY
+            ),
+            'customFieldURLName' => new ezcInputFormDefinitionElement(
+                ezcInputFormDefinitionElement::OPTIONAL, 'unsafe_raw', null, FILTER_REQUIRE_ARRAY
+            ),
 	    );
 	    
 	    $form = new ezcInputForm( INPUT_POST, $definition );
@@ -720,6 +733,19 @@ class erLhcoreClassAdminChatValidatorHelper {
 	    } else {
 	        $data['offline_message_require_option'] = 'required';
 	    }
+
+	    if ( $form->hasValidData( 'customFieldURLIdentifier' ) && !empty($form->customFieldURLIdentifier)) {
+            $customFieldsURL = array();
+            foreach ($form->customFieldURLIdentifier as $key => $customFieldIdentifier) {
+                $customFieldsURL[] = array(
+                    'fieldidentifier' => $customFieldIdentifier,
+                    'fieldname' => $form->customFieldURLName[$key]
+                );
+            }
+            $data['custom_fields_url'] = json_encode($customFieldsURL,JSON_HEX_APOS);
+        } else {
+            $data['custom_fields_url'] = '';
+        }
 
 	    if ( $form->hasValidData( 'customFieldType' ) && !empty($form->customFieldType)) {
 	        $customFields = array();

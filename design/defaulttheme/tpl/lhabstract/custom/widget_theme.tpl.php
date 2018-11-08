@@ -118,9 +118,9 @@
                 	   
             		    <div id="messages">
                             <div class="msgBlock" style="" id="messagesBlock">       
-                                <div class="message-row response" style="background-color: #{{bactract_bg_color_buble_visitor_background}};color:#{{bactract_bg_color_buble_visitor_text_color}}" id="msg-10459" data-op-id="0"><div class="msg-date">10:14:39</div><span style="color:#{{bactract_bg_color_buble_visitor_title_color}}" class="usr-tit vis-tit" role="button"><i class="material-icons chat-operators mi-fs15 mr-0">face</i>Visitor</span> Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+                                <div class="message-row response" id="msg-10459" data-op-id="0"><div class="msg-date">10:14:39</div><span style="color:#{{bactract_bg_color_buble_visitor_title_color}}" class="usr-tit vis-tit" role="button"><i class="material-icons chat-operators mi-fs15 mr-0">face</i>Visitor</span> <div class="msg-body" style="background-color: #{{bactract_bg_color_buble_visitor_background}};color:#{{bactract_bg_color_buble_visitor_text_color}}">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div></div>
             		            <div class="message-row message-admin operator-changes" style="background-color: #{{bactract_bg_color_buble_operator_background}};color:#{{bactract_bg_color_buble_operator_text_color}}" id="msg-10463" data-op-id="1">
-            		            <div class="msg-date">10:18:22</div><span style="color:#{{bactract_bg_color_buble_operator_title_color}}"  class="usr-tit op-tit"><i class="material-icons chat-operators mi-fs15 mr-0">account_box</i>Operator</span>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div>
+            		            <div class="msg-date">10:18:22</div><span class="usr-tit op-tit"><i class="material-icons chat-operators mi-fs15 mr-0">account_box</i>Operator</span><div class="msg-body" style="color:#{{bactract_bg_color_buble_operator_title_color}}">Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua.</div></div>
             		        </div>
                         </div>
 		
@@ -336,6 +336,11 @@
     				<div class="form-group">										
     				<label><?php echo $fields['pending_join']['trans'];?></label>
     				<?php echo erLhcoreClassAbstract::renderInput('pending_join', $fields['pending_join'], $object)?>		
+    				</div>
+
+    				<div class="form-group">
+    				<label><?php echo $fields['pending_join_queue']['trans'];?></label>
+    				<?php echo erLhcoreClassAbstract::renderInput('pending_join_queue', $fields['pending_join_queue'], $object)?>
     				</div>
     				
     				<div class="form-group">										
@@ -554,7 +559,7 @@
             font-weight: bold;
             color: #000000;
             display: block;
-            padding: 2px;
+            padding: 10px;
             background: #{{bactract_bg_color_onl_bcolor}} url('<?php if ($object->online_image_url != '') : ?><?php echo $object->online_image_url;?><?php else : ?><?php echo erLhcoreClassDesign::design('images/getstatus/online.svg');?><?php endif?>') no-repeat center center;
         }
 
@@ -572,10 +577,10 @@
         }
 
 		#lhc_status_container * {direction:ltr;text-align:left;;font-family:arial;font-size:12px;box-sizing: content-box;zoom:1;margin:0;padding:0}
-		#lhc_status_container .status-icon{text-decoration:none; font-size:12px; font-weight:bold; padding:2px; color:#{{bactract_bg_color_text_color}}; display:block; background:url('<?php if ($object->online_image_url != '') : ?><?php echo $object->online_image_url;?><?php else : ?><?php echo erLhcoreClassDesign::design('images/icons/user_green_chat.png');?><?php endif?>') no-repeat left center}
+		#lhc_status_container .status-icon{text-decoration:none;font-size:12px;font-weight:bold;color:#{{bactract_bg_color_text_color}};display:block;padding:10px 10px 10px 35px;background:url('<?php if ($object->online_image_url != '') : ?><?php echo $object->online_image_url;?><?php else : ?><?php echo erLhcoreClassDesign::design('images/icons/user_green_chat.png');?><?php endif?>') no-repeat left center}
 		#lhc_status_container:hover{}
 		#lhc_status_container #offline-icon{background-image:url('<?php if ($object->offline_image_url != '') : ?><?php echo $object->offline_image_url;?><?php else : ?><?php echo erLhcoreClassDesign::design('images/icons/user_gray_chat.png');?><?php endif;?>')}
-		#lhc_status_container{box-sizing: content-box; -webkit-border-top-left-radius: 20px; -moz-border-radius-topleft: 20px; border-top-left-radius: 20px; -webkit-box-shadow: -1px -1px 5px rgba(50, 50, 50, 0.17); border:1px solid #{{bactract_bg_color_bor_bcolor}}; border-right:0; border-bottom:0; -moz-box-shadow:-1px -1px 5px rgba(50, 50, 50, 0.17); box-shadow: -1px -1px 5px rgba(50, 50, 50, 0.17); padding:2px 0px 0px 2px; width:190px; font-family:arial; font-size:12px; transition: 1s; background-color:#{{bactract_bg_color_onl_bcolor}}; z-index:9989;}
+		#lhc_status_container{box-sizing: content-box;-webkit-border-top-left-radius: 20px;-moz-border-radius-topleft: 20px;border-top-left-radius: 20px;-webkit-box-shadow: -1px -1px 5px rgba(50, 50, 50, 0.17);border:1px solid #{{bactract_bg_color_bor_bcolor}};border-right:0;border-bottom:0;-moz-box-shadow:-1px -1px 5px rgba(50, 50, 50, 0.17);box-shadow: -1px -1px 5px rgba(50, 50, 50, 0.17);padding:5px 0px 0px 5px;width:190px;font-family:arial;font-size:12px;transition: 1s;background-color:#{{bactract_bg_color_onl_bcolor}};z-index:9989;}
 		@media only screen and (max-width : 640px) {#lhc_status_container{position:relative;top:0;right:0;bottom:0;left:0;width:auto;border-radius:2px;box-shadow:none;border:1px solid #e3e3e3;margin-bottom:5px;}}
 		</style>
 				
@@ -592,7 +597,7 @@
 		#lhc_container iframe{transition-property: height;transition-duration: 0.4s;-webkit-transition: height 0.4s ease-in-out;transition: height 0.4s;}
 		#lhc_container #lhc_iframe_container{border: {{ngModelAbstractInput_widget_border_width > 0 ? ngModelAbstractInput_widget_border_width : 1}}px solid #{{bactract_bg_color_widget_border_color}};border-top: 0;border-bottom-left-radius: 5px;border-bottom-right-radius: 5px;overflow: hidden;}
 		#lhc_container iframe.lhc-loading{background: #FFF url(<?php echo erLhcoreClassDesign::design('images/general/loading.gif');?>) no-repeat center center; }
-		@media only screen and (max-width : 640px) {#lhc_container{margin-bottom:5px;position:relative;right:0 !important;bottom:0 !important;top:0 !important}#lhc_container iframe{width:100% !important}}
+		@media only screen and (max-width : 640px) {#lhc_container{margin-bottom:5px;position:relative;right:0 !important;top: 50% !important;bottom:0 !important;}#lhc_container iframe{width:100% !important}}
 		</style>
 				
 		<style type="text/css">

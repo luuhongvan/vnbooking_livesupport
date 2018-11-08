@@ -1,11 +1,5 @@
 <?php
 
-/*$chatResponder = erLhAbstractModelAutoResponderChat::fetch(186);
-print_r($chatResponder->auto_responder);
-exit;*/
-
-
-
 $tpl = erLhcoreClassTemplate::getInstance( 'lhuser/account.tpl.php' );
 
 $currentUser = erLhcoreClassUser::instance();
@@ -24,6 +18,7 @@ if (erLhcoreClassUser::instance()->hasAccessTo('lhuser','allowtochoosependingmod
 	$pendingSettings = erLhcoreClassUserValidator::validateShowAllPendingOption();
 	
 	erLhcoreClassModelUserSetting::setSetting('show_all_pending', $pendingSettings['show_all_pending']);
+	erLhcoreClassModelUserSetting::setSetting('auto_uppercase', $pendingSettings['auto_uppercase']);
 
     $UserData->exclude_autoasign = $pendingSettings['exclude_autoasign'];
     $UserData->auto_accept = $pendingSettings['auto_accept'];
@@ -60,6 +55,8 @@ if (erLhcoreClassUser::instance()->hasAccessTo('lhspeech','changedefaultlanguage
 	
 	erLhcoreClassModelUserSetting::setSetting('speech_language', $validateSpeechData['speech_language']);
 	erLhcoreClassModelUserSetting::setSetting('speech_dialect', $validateSpeechData['speech_dialect']);
+
+    erLhcoreClassSpeech::setUserLanguages($currentUser->getUserID(),$validateSpeechData['user_languages']);
 
 	$tpl->set('account_updated','done');
 	$tpl->set('tab','tab_speech');

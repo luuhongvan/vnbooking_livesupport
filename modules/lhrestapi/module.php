@@ -37,6 +37,10 @@ $ViewList['isonlineuser'] = array(
     'params' => array('user_id')
 );
 
+$ViewList['isonlinechat'] = array(
+    'params' => array('chat_id')
+);
+
 $ViewList['setoperatorstatus'] = array(
     'params' => array()
 );
@@ -104,6 +108,14 @@ $ViewList['startchat'] = array(
 );
 
 $ViewList['addmsguser'] = array(
+    'params' => array()
+);
+
+$ViewList['addmsgadmin'] = array(
+    'params' => array()
+);
+
+$ViewList['setchatstatus'] = array(
     'params' => array()
 );
 

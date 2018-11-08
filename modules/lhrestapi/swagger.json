@@ -323,6 +323,122 @@
         }
       }
     },
+    "/restapi/addmsgadmin": {
+      "post": {
+        "tags": [
+          "api"
+        ],
+        "summary": "Add message to chat as an admin",
+        "description": "",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "formData",
+            "description": "Chat ID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "msg",
+            "in": "formData",
+            "description": "Message",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "sender",
+            "in": "formData",
+            "description": "Sender - operator or bot is sending a message. On it depends how Live Helper Chat will change chat statuses.",
+            "required": true,
+            "type": "string",
+            "enum": [
+              "operator",
+              "bot"
+            ]
+          },
+          {
+            "name": "meta_msg",
+            "in": "formData",
+            "description": "Meta body for a message",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "name": "operator_name",
+            "in": "formData",
+            "description": "Set custom operator name for a message",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Message added",
+            "schema": {
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+            }
+          }
+        },
+        "security": [
+          {
+            "login": []
+          }
+        ]
+      }
+    },
+    "/restapi/setchatstatus": {
+      "post": {
+        "tags": [
+          "api"
+        ],
+        "summary": "Set chat status",
+        "description": "Changes chat status to provided one. Related logic is also executed in the background.",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "formData",
+            "description": "Chat ID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "name": "status",
+            "in": "formData",
+            "description": "0 - pending, 1 - active, 2 - closed chat, chat box chat - 3, operators chat - 4, bot chat - 5",
+            "required": true,
+            "type": "string",
+            "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Chat status was changed",
+            "schema": {
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+            }
+          }
+        },
+        "security": [
+          {
+            "login": []
+          }
+        ]
+      }
+    },
     "/restapi/getuser": {
       "post": {
         "tags": [
@@ -428,6 +544,13 @@
           "application/json"
         ],
         "parameters": [
+          {
+            "name": "ignore_user_status",
+            "in": "query",
+            "description": "Ignore user status",
+            "required": false,
+            "type": "boolean"
+          }
         ],
         "responses": {
           "200": {
@@ -463,9 +586,23 @@
             "name": "department_id",
             "in": "path",
             "description": "Department ID",
-            "required": false,
+            "required": true,
             "type": "string",
             "format": "int32"
+          },
+          {
+            "name": "ignore_user_status",
+            "in": "query",
+            "description": "Ignore user status",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "exclude_bot",
+            "in": "query",
+            "description": "Exclude bot status",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "responses": {
@@ -505,6 +642,59 @@
             "required": false,
             "type": "string",
             "format": "int32"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "",
+            "schema": {
+            }
+          },
+          "400": {
+            "description": "Error",
+            "schema": {
+            }
+          }
+        },
+        "security": [
+          {
+            "login": []
+          }
+        ]
+      }
+    },
+    "/restapi/isonlinechat/{chat_id}": {
+      "get": {
+        "tags": [
+          "online"
+        ],
+        "summary": "Check is user anyone from operators online for provided chat",
+        "description": "Returns status for particular user",
+        "produces": [
+          "application/json"
+        ],
+        "parameters": [
+          {
+            "name": "chat_id",
+            "in": "path",
+            "description": "Chat ID",
+            "required": false,
+            "type": "string",
+            "format": "int32"
+          },
+          {
+            "name": "ignore_user_status",
+            "in": "query",
+            "description": "Ignore user status",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "name": "exclude_bot",
+            "in": "query",
+            "description": "Exclude bot status",
+            "required": false,
+            "type": "boolean"
           }
         ],
         "responses": {

@@ -1,1 +1,1 @@
-<meta name="copyright" content="Remigijus Kiminas, vnbooking.com">
+<meta name="copyright" content="Remigijus Kiminas, livehelperchat.com">

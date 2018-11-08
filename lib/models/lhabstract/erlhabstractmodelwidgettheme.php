@@ -72,6 +72,7 @@ class erLhAbstractModelWidgetTheme {
 			'support_joined'		    => $this->support_joined,
 			'support_closed'		    => $this->support_closed,
 			'pending_join'		        => $this->pending_join,
+			'pending_join_queue'		=> $this->pending_join_queue,
 			'noonline_operators'		=> $this->noonline_operators,
 			'noonline_operators_offline'=> $this->noonline_operators_offline,
 			'show_need_help'            => $this->show_need_help,
@@ -398,14 +399,14 @@ class erLhAbstractModelWidgetTheme {
 
    	public $id = null;
 	public $name = '';
-	public $onl_bcolor = '0c8fc4';
+	public $onl_bcolor = '55AF32';
 	public $text_color = '000000';
 	public $bor_bcolor = 'e3e3e3';
 	public $online_image = '';
 	public $offline_image = '';
 	public $online_image_path = '';
 	public $offline_image_path = '';
-	public $header_background = '525252';
+	public $header_background = '55AF32';
 	public $need_help_bcolor = '92B830';
 	public $need_help_hover_bg = '84A52E';
 	public $need_help_image = '';	
@@ -456,6 +457,7 @@ class erLhAbstractModelWidgetTheme {
 	public $bot_status_text = '';
 	public $support_closed = '';
 	public $pending_join = '';
+	public $pending_join_queue = '';
 	public $noonline_operators = '';
 	public $noonline_operators_offline = '';
 	public $notification_configuration = '';
